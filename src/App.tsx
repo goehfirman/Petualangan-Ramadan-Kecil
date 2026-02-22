@@ -1,0 +1,191 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from 'react';
+import Login from './components/Login';
+import Navbar from './components/Navbar';
+import Home from './components/Home';
+import Puasa from './components/Puasa';
+import Amalan from './components/Amalan';
+import Quran from './components/Quran';
+import Waktu from './components/Waktu';
+import Leaderboard from './components/Leaderboard';
+import Inquiry from './components/Inquiry';
+import AdminDashboard from './components/AdminDashboard';
+import { quotes } from './data/students';
+import { 
+  getRamadhanDay, 
+  getRecord, 
+  saveRecord, 
+  getTotalExp, 
+  getLeaderboard, 
+  convertToHijri,
+  getUserRecords,
+  getAllRecords
+} from './utils/ramadhan';
+import { AmalanRecord } from './types';
+
+export default function App() {
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    return localStorage.getItem('currentUser');
+  });
+  const [activeSection, setActiveSection] = useState(() => {
+    return localStorage.getItem('activeSection') || 'home';
+  });
+  const [currentDay, setCurrentDay] = useState(1);
+  const [currentRecord, setCurrentRecord] = useState<AmalanRecord | undefined>(undefined);
+  const [totalExp, setTotalExp] = useState(0);
+  const [rank, setRank] = useState<number | string>('-');
+  const [dailyQuote, setDailyQuote] = useState('');
+  const [currentDateString, setCurrentDateString] = useState('');
+  const [currentTimeString, setCurrentTimeString] = useState('');
+  const [totalQuranPages, setTotalQuranPages] = useState(0);
+
+  // Initialize
+  useEffect(() => {
+    // Set initial day based on date
+    const day = getRamadhanDay();
+    setCurrentDay(Math.min(30, Math.max(1, day)));
+    
+    // Set random quote
+    setDailyQuote(quotes[Math.floor(Math.random() * quotes.length)]);
+
+    // Update time
+    const updateTime = () => {
+      const now = new Date();
+      const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      const gregorian = now.toLocaleDateString('id-ID', options);
+      const hijri = convertToHijri(now);
+      
+      const timeOptions: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit', second: '2-digit' };
+      const timeStr = now.toLocaleTimeString('id-ID', timeOptions);
+      
+      setCurrentDateString(`📅 ${gregorian} / 📆 ${hijri}`);
+      setCurrentTimeString(timeStr);
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000); // Update every second for clock
+    return () => clearInterval(interval);
+  }, []);
+
+  // Load user data when user or day changes
+  useEffect(() => {
+    async function loadUserData() {
+      if (currentUser && currentUser !== 'admin') {
+        const record = await getRecord(currentUser, currentDay);
+        setCurrentRecord(record);
+        
+        const exp = await getTotalExp(currentUser);
+        setTotalExp(exp);
+
+        const leaderboard = await getLeaderboard();
+        const myRankIndex = leaderboard.findIndex(r => r.name === currentUser);
+        setRank(myRankIndex >= 0 ? myRankIndex + 1 : '-');
+
+        // Calculate total quran pages
+        const userRecords = await getUserRecords(currentUser);
+        const pages = userRecords.reduce((sum, r) => sum + (r.quran_pages || 0), 0);
+        setTotalQuranPages(pages);
+      }
+    }
+    loadUserData();
+  }, [currentUser, currentDay, activeSection]); // Reload on section change to refresh leaderboard/exp
+
+  const handleLogin = (name: string) => {
+    setCurrentUser(name);
+    localStorage.setItem('currentUser', name);
+    setActiveSection('home');
+    localStorage.setItem('activeSection', 'home');
+  };
+
+  const handleLogout = () => {
+    setCurrentUser(null);
+    localStorage.removeItem('currentUser');
+    setActiveSection('home');
+    localStorage.removeItem('activeSection');
+  };
+
+  const handleNavigate = (section: string) => {
+    setActiveSection(section);
+    localStorage.setItem('activeSection', section);
+  };
+
+  const handleSaveRecord = async (record: AmalanRecord) => {
+    await saveRecord(record);
+    setCurrentRecord(record);
+    // Update exp immediately
+    const exp = await getTotalExp(currentUser!);
+    setTotalExp(exp);
+  };
+
+  if (!currentUser) {
+    return (
+      <div className="h-full overflow-auto scroll-hidden gradient-bg text-white relative">
+        <div className="relative z-20">
+          <Login onLogin={handleLogin} />
+        </div>
+      </div>
+    );
+  }
+
+  if (currentUser === 'admin') {
+    return <AdminDashboard onLogout={handleLogout} />;
+  }
+
+  return (
+    <div className="h-[100dvh] overflow-auto scroll-hidden gradient-bg text-white relative font-poppins">
+      <div className="relative z-20 min-h-screen pb-20 flex flex-col">
+        <div className="sticky top-0 z-50 w-full">
+          <Navbar 
+            currentUser={currentUser} 
+            totalExp={totalExp} 
+            activeSection={activeSection} 
+            onNavigate={handleNavigate} 
+            onLogout={handleLogout}
+            currentDate={currentDateString}
+            currentTime={currentTimeString}
+          />
+        </div>
+
+        <main className="max-w-5xl mx-auto p-4 w-full flex-1">
+          {activeSection === 'home' && (
+            <Home 
+              day={currentDay} 
+              exp={totalExp} 
+              quranPages={totalQuranPages} 
+              rank={rank} 
+              quote={dailyQuote}
+              onNavigate={handleNavigate}
+            />
+          )}
+          
+          {activeSection === 'puasa' && <Puasa />}
+          
+          {activeSection === 'amalan' && (
+            <Amalan 
+              currentUser={currentUser} 
+              currentDay={currentDay} 
+              record={currentRecord} 
+              onSave={handleSaveRecord}
+              onDayChange={setCurrentDay}
+            />
+          )}
+          
+          {activeSection === 'quran' && <Quran totalQuranPages={totalQuranPages} />}
+          
+          {activeSection === 'waktu' && <Waktu currentDate={currentDateString} />}
+          
+          {activeSection === 'leaderboard' && <Leaderboard currentUser={currentUser} />}
+
+          {activeSection === 'inquiry' && <Inquiry currentUser={currentUser} />}
+        </main>
+        
+        <footer className="py-6 text-center text-blue-400 text-sm font-medium">
+          <p>Created by Teguh Firmansyah Apriliana <a href="https://instagram.com/goehfirmaan" target="_blank" rel="noopener noreferrer" className="text-orange-500 hover:text-orange-600 font-bold">@goehfirmaan</a></p>
+        </footer>
+      </div>
+    </div>
+  );
+}

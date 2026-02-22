@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+  .font-amiri {
+    font-family: 'Amiri', serif;
+  }
+  
+  .scroll-hidden::-webkit-scrollbar {
+    display: none;
+  }
+  .scroll-hidden {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes bounce-subtle {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-3deg); }
+  75% { transform: rotate(3deg); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 255, 255, 0.4); }
+  50% { box-shadow: 0 0 25px rgba(255, 255, 255, 0.7); }
+}
+
+.animate-float { animation: float 3s ease-in-out infinite; }
+.animate-bounce-subtle { animation: bounce-subtle 2s ease-in-out infinite; }
+.animate-wiggle { animation: wiggle 0.5s ease-in-out infinite; }
+.animate-slide-in { animation: slideIn 0.5s ease-out forwards; }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+.gradient-bg {
+  background-color: #4FC3F7; /* Bright Sky Blue */
+  background-image: radial-gradient(circle at 20% 20%, #81D4FA 0%, transparent 40%),
+                    radial-gradient(circle at 80% 80%, #29B6F6 0%, transparent 40%);
+}
+
+.card-gradient {
+  background-color: #FFFFFF;
+  border-radius: 24px;
+  box-shadow: 0 8px 0px rgba(0, 0, 0, 0.1);
+}
+
+.btn-pop {
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.btn-pop:hover {
+  transform: scale(1.05) translateY(-2px);
+}
+
+.btn-pop:active {
+  transform: scale(0.95) translateY(0);
+}
+
+.btn-primary {
+  background-color: #FF7043; /* Bright Orange */
+  color: white;
+  box-shadow: 0 4px 0px #D84315;
+}
+
+.btn-secondary {
+  background-color: #66BB6A; /* Bright Green */
+  color: white;
+  box-shadow: 0 4px 0px #2E7D32;
+}
+
+.btn-accent {
+  background-color: #FFCA28; /* Bright Yellow */
+  color: #5D4037;
+  box-shadow: 0 4px 0px #F9A825;
+}
+
+.btn-blue {
+  background-color: #42A5F5; /* Bright Blue */
+  color: white;
+  box-shadow: 0 4px 0px #1565C0;
+}
+
+.text-outline {
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
