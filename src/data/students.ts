@@ -37,6 +37,7 @@ export const studentData: Student[] = [
   { kelas: "Kelas 1A", name: "SHALVINA SYAHPUTRI AHMAD", password: "3816" },
   { kelas: "Kelas 1A", name: "VERI BUDI SAPUTRA", password: "3817" },
   { kelas: "Kelas 1A", name: "WELLA CANIA PUTRI", password: "3818" },
+  { kelas: "Kelas 1A", name: "ZEA ALMAHYRA", password: "3857" },
   { kelas: "Kelas 1B", name: "AIJAZ FARIZ BACHTIAR", password: "3819" },
   { kelas: "Kelas 1B", name: "ALIFAH NUR SALSABILA", password: "3820" },
   { kelas: "Kelas 1B", name: "ALTHAF RIFQIE ABRISAM", password: "3821" },
