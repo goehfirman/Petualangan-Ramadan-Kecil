@@ -96,40 +96,99 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }));
   };
 
-  const downloadIndividualReport = (studentName: string) => {
+  const downloadIndividualReport = async (studentName: string) => {
     const doc = new jsPDF();
     const studentRecords = allRecords.filter(r => r.student_name === studentName).sort((a, b) => a.day - b.day);
     const summary = summaries.find(s => s.name === studentName);
+    const totalPuasa = studentRecords.filter(r => r.puasa).length;
 
-    // Header
-    doc.setFontSize(18);
-    doc.text('Laporan Amalan Ramadhan', 14, 22);
-    doc.setFontSize(12);
-    doc.text(`Nama Siswa: ${studentName}`, 14, 32);
-    doc.text(`Kelas: ${summary?.kelas || '-'}`, 14, 38);
-    doc.text(`Total Bintang: ${summary?.totalExp || 0}`, 14, 44);
-    doc.text(`Total Hal/Surat: ${summary?.totalQuranPages || 0}`, 14, 50);
-    doc.text(`Hari Terisi: ${summary?.daysFilled || 0} / 30`, 14, 56);
+    // Logo (Top Center)
+    const logoUrl = "https://i.ibb.co.com/trFqzRQ/LOGO-PEKAYON-09.png";
+    
+    try {
+      // We try to add the image. If it fails (e.g. CORS), we'll skip it gracefully.
+      doc.addImage(logoUrl, 'PNG', 92, 10, 25, 25);
+    } catch (e) {
+      console.error("Failed to load logo in PDF:", e);
+    }
+
+    // Title (Center)
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Laporan Jurnal Ramadhan 1447 H', 105, 45, { align: 'center' });
+    doc.text('SDN Pekayon 09', 105, 53, { align: 'center' });
+
+    // Total Stars (Top Right Badge)
+    const label = "Total Bintang";
+    const value = `${summary?.totalExp || 0}`;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(107, 114, 128); // Gray-500
+    doc.text(label, 196, 10, { align: 'right' });
+
+    doc.setFontSize(16);
+    const valueWidth = doc.getTextWidth(value);
+    const boxPadding = 6;
+    const boxWidth = Math.max(25, valueWidth + (boxPadding * 2));
+    const boxHeight = 12;
+    const boxX = 196 - boxWidth;
+    const boxY = 12;
+
+    // Draw Box
+    doc.setDrawColor(245, 158, 11); // Amber-500
+    doc.setLineWidth(0.5);
+    doc.setFillColor(255, 251, 235); // Amber-50
+    doc.roundedRect(boxX, boxY, boxWidth, boxHeight, 2, 2, 'FD');
+
+    // Text inside box
+    doc.setTextColor(180, 83, 9); // Amber-800
+    doc.text(value, boxX + (boxWidth / 2), boxY + 8.5, { align: 'center' });
+    
+    // Reset color and font
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.setLineWidth(0.2); // Reset line width for table or other elements
+
+    // Details
+    doc.text(`Nama Siswa: ${studentName}`, 14, 65);
+    doc.text(`Kelas: ${summary?.kelas || '-'}`, 14, 71);
+    doc.text(`Puasa: ${totalPuasa} Hari`, 14, 77);
+    doc.text(`Hari Terisi: ${summary?.daysFilled || 0} / 30`, 14, 83);
 
     // Table
-    const tableData = studentRecords.map(record => [
-      `Hari ke-${record.day}`,
-      record.sholat_subuh ? (record.sholat_subuh === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
-      record.sholat_dzuhur ? (record.sholat_dzuhur === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
-      record.sholat_ashar ? (record.sholat_ashar === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
-      record.sholat_maghrib ? (record.sholat_maghrib === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
-      record.sholat_isya ? (record.sholat_isya === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
-      record.sholat_tarawih ? (record.sholat_tarawih === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
-      record.sahur ? 'Ya' : 'Tidak',
-      record.puasa ? 'Ya' : 'Tidak',
-      record.quran_pages || 0,
-      record.total_exp || 0
-    ]);
+    const tableData = studentRecords.map(record => {
+      const qType = record.quran_type === 'baca' ? 'Iqra/Quran' : 
+                    record.quran_type === 'murojaah' ? 'Murojaah' : 
+                    record.quran_type === 'hafalan' ? 'Hafalan' : '-';
+      const qNote = record.quran_note || '';
+      const quranDisplay = record.quran_pages > 0 ? `${qType}${qNote ? `\n${qNote}` : ''}` : '-';
+
+      return [
+        `Hari ke-${record.day}`,
+        record.sholat_subuh ? (record.sholat_subuh === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
+        record.sholat_dzuhur ? (record.sholat_dzuhur === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
+        record.sholat_ashar ? (record.sholat_ashar === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
+        record.sholat_maghrib ? (record.sholat_maghrib === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
+        record.sholat_isya ? (record.sholat_isya === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
+        record.sholat_tarawih ? (record.sholat_tarawih === 'jamaah' ? 'Jamaah' : 'Munfarid') : '-',
+        record.sahur ? 'Ya' : 'Tidak',
+        record.puasa ? 'Ya' : 'Tidak',
+        quranDisplay,
+        record.total_exp || 0
+      ];
+    });
 
     autoTable(doc, {
-      startY: 65,
-      head: [['Hari', 'Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya', 'Tarawih', 'Sahur', 'Puasa', 'Quran (Hal/Surat)', 'Bintang']],
+      startY: 90,
+      head: [['Hari', 'Subuh', 'Dzuhur', 'Ashar', 'Maghrib', 'Isya', 'Tarawih', 'Sahur', 'Puasa', 'Kegiatan Quran', 'Bintang']],
       body: tableData,
+      headStyles: { fillColor: [59, 130, 246] }, // Blue-500
+      styles: { fontSize: 8 },
+      columnStyles: {
+        9: { cellWidth: 25 }
+      }
     });
 
     doc.save(`Laporan_${studentName.replace(/\s+/g, '_')}.pdf`);
