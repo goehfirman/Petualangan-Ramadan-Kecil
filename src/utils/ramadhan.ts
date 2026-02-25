@@ -61,16 +61,35 @@ export const getRamadhanDay = (): number => {
 };
 
 export const getAllRecords = async (): Promise<AmalanRecord[]> => {
-  const { data, error } = await supabase
-    .from('amalan_records')
-    .select('*');
-  
-  if (error) {
-    console.error('Error fetching all records:', error);
-    return [];
+  let allRecords: any[] = [];
+  let hasMore = true;
+  let page = 0;
+  const pageSize = 1000;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('amalan_records')
+      .select('*')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+    
+    if (error) {
+      console.error('Error fetching all records:', error);
+      break;
+    }
+    
+    if (data) {
+      allRecords = [...allRecords, ...data];
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    } else {
+      hasMore = false;
+    }
   }
   
-  return data as AmalanRecord[];
+  return allRecords as AmalanRecord[];
 };
 
 export const getUserRecords = async (studentName: string): Promise<AmalanRecord[]> => {
@@ -141,20 +160,39 @@ export const getTotalExp = async (studentName: string): Promise<number> => {
 
 export const getLeaderboard = async (): Promise<StudentRank[]> => {
   // Fetch all records to calculate leaderboard
-  // In a real app with many users, this should be a database view or RPC
-  const { data: records, error } = await supabase
-    .from('amalan_records')
-    .select('student_name, total_exp');
-    
-  if (error) {
-    console.error('Error fetching leaderboard data:', error);
-    return [];
+  // Handle pagination to overcome Supabase's default 1000 row limit
+  let allRecords: any[] = [];
+  let hasMore = true;
+  let page = 0;
+  const pageSize = 1000;
+
+  while (hasMore) {
+    const { data: records, error } = await supabase
+      .from('amalan_records')
+      .select('student_name, total_exp')
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+    if (error) {
+      console.error('Error fetching leaderboard data:', error);
+      break;
+    }
+
+    if (records) {
+      allRecords = [...allRecords, ...records];
+      if (records.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    } else {
+      hasMore = false;
+    }
   }
 
   const expMap = new Map<string, number>();
   
   // Calculate EXP for all records
-  records.forEach(r => {
+  allRecords.forEach(r => {
     const current = expMap.get(r.student_name) || 0;
     expMap.set(r.student_name, current + (r.total_exp || 0));
   });
@@ -236,15 +274,34 @@ export const saveInquiry = async (studentName: string, subject: string, message:
 };
 
 export const getAllInquiries = async (): Promise<any[]> => {
-  const { data, error } = await supabase
-    .from('inquiries')
-    .select('*')
-    .order('created_at', { ascending: false });
+  let allInquiries: any[] = [];
+  let hasMore = true;
+  let page = 0;
+  const pageSize = 1000;
+
+  while (hasMore) {
+    const { data, error } = await supabase
+      .from('inquiries')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(page * pageSize, (page + 1) * pageSize - 1);
+      
+    if (error) {
+      console.error('Error fetching inquiries:', error);
+      break;
+    }
     
-  if (error) {
-    console.error('Error fetching inquiries:', error);
-    return [];
+    if (data) {
+      allInquiries = [...allInquiries, ...data];
+      if (data.length < pageSize) {
+        hasMore = false;
+      } else {
+        page++;
+      }
+    } else {
+      hasMore = false;
+    }
   }
   
-  return data;
+  return allInquiries;
 };
