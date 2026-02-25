@@ -16,9 +16,10 @@ export default function Amalan({ currentUser, currentDay, record, onSave, onDayC
   const [displayDate, setDisplayDate] = useState<{ gregorian: string; hijri: string }>({ gregorian: '', hijri: '' });
   
   const actualRamadhanDay = getRamadhanDay();
-  // Allow editing for any day up to the current actual day
-  const isEditable = currentDay <= actualRamadhanDay;
+  // Allow editing for the current day and 1 day before
   const isFuture = currentDay > actualRamadhanDay;
+  const isPastLocked = currentDay < actualRamadhanDay - 1;
+  const isEditable = !isFuture && !isPastLocked;
 
   useEffect(() => {
     // Update date display when currentDay changes
@@ -205,6 +206,16 @@ export default function Amalan({ currentUser, currentDay, record, onSave, onDayC
             <div>
               <p className="font-black text-red-600">Belum Waktunya!</p>
               <p className="text-sm font-bold text-red-400">Kamu belum bisa mengisi amalan untuk hari yang belum datang ya.</p>
+            </div>
+          </div>
+        )}
+
+        {isPastLocked && (
+          <div className="bg-orange-100 border-4 border-orange-200 rounded-2xl p-4 mb-8 flex items-center gap-3">
+            <div className="text-3xl">⌛</div>
+            <div>
+              <p className="font-black text-orange-600">Waktu Habis!</p>
+              <p className="text-sm font-bold text-orange-400">Pengisian amalan hanya bisa dilakukan untuk hari ini dan kemarin.</p>
             </div>
           </div>
         )}
